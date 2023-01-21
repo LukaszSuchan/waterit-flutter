@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:device_preview/device_preview.dart';
 import 'package:flutter_app/providers/mqtt_client_provider.dart';
 import 'package:flutter_app/screens/welcome/welcome_screen.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';  
 
 void main() => runApp(
   ChangeNotifierProvider(

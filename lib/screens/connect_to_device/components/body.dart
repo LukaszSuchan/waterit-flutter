@@ -16,36 +16,29 @@ class Body extends StatefulWidget {
 }
 
 class _DeviceListScreenState extends State<Body> {
-  FlutterBlue flutterBlue = FlutterBlue.instance;
+  late FlutterBlue flutterBlue;
   Utf8Encoder encoder = const Utf8Encoder();
-  List<int> request1 = List<int>.empty();
-  List<int> request2 = List<int>.empty();
-  List<BluetoothDevice> devicesList = [];
-  bool isScanning = false;
+  late List<int> request1;
+  late List<int> request2;
+  late List<BluetoothDevice> devicesList;
+  late bool isScanning;
   JsonCodec json = const JsonCodec();
   late Map wifiCredentials;
-  bool canSave = false;
+  late bool canSave;
+  late TextEditingController deviceNameController;
 
   Future<void> findDevices() async {
+    devicesList.clear();
+    flutterBlue = FlutterBlue.instance;
     flutterBlue.startScan(timeout: const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() {
-      isScanning = true;
-    });
-
     // Nasłuchiwanie na znalezione urządzenia
     flutterBlue.scanResults.listen((results) {
       // Przefiltruj urządzenia tak, aby zawierały tylko ESP32
       results.where((r) => r.device.name.startsWith("BLE")).forEach((r) {
-        // Dodaj urządzenie do listy
         if (!devicesList.contains(r.device)) {
           if (!mounted) return;
           setState(() => devicesList.add(r.device));
         }
-      });
-      if (!mounted) return;
-      setState(() {
-        isScanning = false;
       });
     });
   }
@@ -53,119 +46,160 @@ class _DeviceListScreenState extends State<Body> {
   @override
   void initState() {
     super.initState();
+    request1 = List<int>.empty();
+    request2 = List<int>.empty();
+    isScanning = true;
+    canSave = false;
+    devicesList = [];
+    deviceNameController = TextEditingController();
     findDevices();
+
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    flutterBlue.stopScan();
+    devicesList = [];
+    deviceNameController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Background(
-      child: Column(
-        children: [
-          isScanning
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  shrinkWrap: true,
-                  scrollDirection: Axis.vertical,
-                  padding: const EdgeInsets.only(left: 10, right: 10),
-                  itemCount: devicesList.length,
-                  itemBuilder: (context, index) {
-                    var device = devicesList[index];
-                    return GestureDetector(
-                      onTap: () async {
-                        device.connect().whenComplete(
-                          () async {
-                            try {
-                              final response = await _getWifiCredentials();
-                              wifiCredentials = json.decode(response.body);
-                              final ssid = wifiCredentials["ssid"];
-                              final wifiPassword =
-                                  wifiCredentials["wifiPassword"];
-                              request1 = utf8.encode('{"S":"$ssid"}');
-                              request2 = utf8.encode('{"P":"$wifiPassword"}');
-                              canSave = true;
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text("Error while parse credentials"),
-                                ),
-                              );
-                            }
-                            await device.discoverServices().then(
-                              (services) async {
-                                for (var service in services) {
-                                  print(service.uuid.toString());
-                                  if (service.uuid
-                                      .toString()
-                                      .startsWith('0000180a')) {
-                                    for (var characteristic
-                                        in service.characteristics) {
-                                      print(characteristic.uuid.toString());
-                                      if (characteristic.uuid
-                                          .toString()
-                                          .startsWith('0000dead')) {
-                                        await characteristic.write((request1),
-                                            withoutResponse: true);
-                                      } else if (characteristic.uuid
-                                          .toString()
-                                          .startsWith('0000deae')) {
-                                        await characteristic.write((request2),
-                                            withoutResponse: true);
-                                      }
-                                    }
-                                  }
-                                }
-                              },
-                            );
-                          },
-                        );
-                        Future.delayed(const Duration(milliseconds: 1000),
-                            () async {
-                          if (canSave) {
-                            Map data = {
-                              "name": device.name,
-                              "deviceName": device.name,
-                              "isActive": true
-                            };
-                            var body = json.encode(data);
-                            final responseCode = await _addDevice(body);
-                            print(responseCode);
-                            // device.disconnect();
-                            String deviceName = device.name;
+      child: RefreshIndicator(
+        onRefresh: findDevices,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                scrollDirection: Axis.vertical,
+                padding: const EdgeInsets.only(left: 10, right: 10),
+                itemCount: devicesList.length,
+                itemBuilder: (context, index) {
+                  var device = devicesList[index];
+                  return GestureDetector(
+                    onTap: () async {
+                      device.connect(autoConnect: false).whenComplete(
+                        () async {
+                          try {
+                            final response = await _getWifiCredentials();
+                            wifiCredentials = json.decode(response.body);
+                            final ssid = wifiCredentials["ssid"];
+                            final wifiPassword =
+                                wifiCredentials["wifiPassword"];
+                            request1 = utf8.encode('{"S":"$ssid"}');
+                            request2 = utf8.encode('{"P":"$wifiPassword"}');
+                            canSave = true;
+                          } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content:
-                                    Text("Succesfully added device $deviceName"),
+                              const SnackBar(
+                                content: Text("Error while parse credentials"),
                               ),
                             );
                           }
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(top: 10),
-                        height: 80,
-                        width: size.width * 0.8,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.blue[400],
-                        ),
-                        child: Center(
-                          child: Text(
-                            device.name,
-                            style: TextStyle(
-                                color: Colors.grey[850],
-                                fontStyle: FontStyle.italic,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: 'Open Sans',
-                                fontSize: 24),
-                          ),
+                          await device.discoverServices().then(
+                            (services) async {
+                              for (var service in services) {
+                                print(service.uuid.toString());
+                                if (service.uuid
+                                    .toString()
+                                    .startsWith('0000180a')) {
+                                  for (var characteristic
+                                      in service.characteristics) {
+                                    print(characteristic.uuid.toString());
+                                    if (characteristic.uuid
+                                        .toString()
+                                        .startsWith('0000dead')) {
+                                      await characteristic.write((request1),
+                                          withoutResponse: true);
+                                    } else if (characteristic.uuid
+                                        .toString()
+                                        .startsWith('0000deae')) {
+                                      await characteristic.write((request2),
+                                          withoutResponse: true);
+                                    }
+                                  }
+                                }
+                              }
+                              showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                        title: Text("Insert device name"),
+                                        content: TextField(
+                                          autofocus: true,
+                                          controller: deviceNameController,
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () async {
+                                                Map data = {
+                                                  "name": device.name,
+                                                  "deviceName":
+                                                      deviceNameController.text,
+                                                  "active": true
+                                                };
+                                                var body = json.encode(data);
+                                                final responseCode =
+                                                    await _addDevice(body);
+                                                print(responseCode);
+                                                device
+                                                    .disconnect()
+                                                    .whenComplete(() {
+                                                  String deviceName =
+                                                      device.name;
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                          "Waiting for activation of $deviceName"),
+                                                    ),
+                                                  );
+                                                  findDevices();
+                                                  if (!mounted) return;
+                                                  setState(() => devicesList.removeAt(index));
+                                                });
+                                                // ignore: use_build_context_synchronously
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text("SUBMIT"))
+                                        ],
+                                      ));
+                            },
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      height: 80,
+                      width: size.width * 0.8,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.blue[400],
+                      ),
+                      child: Center(
+                        child: Text(
+                          device.name,
+                          style: TextStyle(
+                              color: Colors.grey[850],
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Open Sans',
+                              fontSize: 24),
                         ),
                       ),
-                    );
-                  },
-                )
-        ],
+                    ),
+                  );
+                },
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -173,7 +207,7 @@ class _DeviceListScreenState extends State<Body> {
 
 Future<int> _addDevice(String body) async {
   final response = await http.post(
-    Uri.parse("http://192.168.0.81:8080/waterit/api/device"),
+    Uri.parse("http://172.20.10.3:8080/waterit/api/device"),
     headers: {
       'Authorization': 'Basic $auth',
       "Content-Type": "application/json"
@@ -191,7 +225,7 @@ Future<int> _addDevice(String body) async {
 
 Future<http.Response> _getWifiCredentials() async {
   final response = await http.get(
-    Uri.parse("http://192.168.0.81:8080/waterit/api/account/settings"),
+    Uri.parse("http://172.20.10.3:8080/waterit/api/account/settings"),
     headers: {'Authorization': 'Basic $auth'},
   );
   if (response.statusCode == 200) {

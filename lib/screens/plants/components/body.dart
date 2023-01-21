@@ -37,7 +37,7 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
 
   fetchDevices() async {
     var response = await http.get(
-      Uri.parse("http://192.168.0.81:8080/waterit/api/device"),
+      Uri.parse("http://172.20.10.3:8080/waterit/api/device"),
       headers: {'Authorization': 'Basic $auth'},
     );
 
@@ -77,8 +77,9 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
                         SlidableAction(
                           onPressed: ((_) async {
                             try {
-                              client.publishAndRetainQos1("$deviceName/reset", "true");
-                              
+                              client.publishAndRetainQos1(
+                                  "$deviceName/reset", "true");
+
                               final success = await _deleteDevice(device["id"]);
                               print(success);
                               if (success == 204) {
@@ -109,7 +110,7 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
                           MaterialPageRoute(
                             builder: (context) {
                               currentDevice = device["name"];
-                              return const MonitorScreen();
+                              return MonitorScreen(device["id"]);
                             },
                           ),
                         );
@@ -157,7 +158,7 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
 Future<int> _deleteDevice(int id) async {
   print(auth);
   final response = await http.delete(
-    Uri.parse("http://192.168.0.81:8080/waterit/api/device/$id"),
+    Uri.parse("http://172.20.10.3:8080/waterit/api/device/$id"),
     headers: {'Authorization': 'Basic $auth'},
   );
   if (response.statusCode == 204) {

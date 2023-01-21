@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_app/components/prefs.dart';
 import 'package:flutter_app/components/rounded_button.dart';
@@ -7,6 +7,7 @@ import 'package:flutter_app/providers/mqtt_client_provider.dart';
 import 'package:flutter_app/screens/login/components/background.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:network_info_plus/network_info_plus.dart';
 
 class Body extends StatefulWidget {
   const Body({super.key});
@@ -18,9 +19,37 @@ class Body extends StatefulWidget {
 }
 
 class SettingsPageState extends State<Body> {
+  late NetworkInfo info;
+  String ssid = "ssid";
+
   @override
   void initState() {
     super.initState();
+    info = NetworkInfo();
+    getWifiSsid();
+  }
+
+  void getWifiSsid() async {
+    final ssidqq = (await info.getWifiName()) ?? "'could't load'";
+    final ssidq = ssidqq.substring(1);
+    List<String> c = ssidq.split("");
+    c.removeLast();
+    ssid = c.join();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> refreshSsid() async {
+    getWifiSsid();
+    setState(() {
+      getWifiSsid();
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -28,9 +57,12 @@ class SettingsPageState extends State<Body> {
     final client = Provider.of<MQTTClientProvider>(context);
     Size size = MediaQuery.of(context).size;
     final TextEditingController passwordController = TextEditingController();
-    final TextEditingController ssidController = TextEditingController();
+    final TextEditingController ssidController =
+        TextEditingController(text: ssid);
     final TextEditingController serverIpController = TextEditingController();
     final TextEditingController intervalController = TextEditingController();
+    final TextEditingController measurementIntervalController =
+        TextEditingController();
 
     return Background(
       child: SingleChildScrollView(
@@ -45,18 +77,24 @@ class SettingsPageState extends State<Body> {
               height: 10,
             ),
             const Text("SSID"),
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-              width: size.width * 0.7,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-              ),
-              child: TextField(
-                controller: ssidController,
-                decoration: const InputDecoration(
-                  hintText: "SSID",
-                  border: InputBorder.none,
+            GestureDetector(
+              onTap: () {
+                getWifiSsid();
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                width: size.width * 0.7,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                ),
+                child: TextField(
+                  readOnly: false,
+                  controller: ssidController,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                  ),
                 ),
               ),
             ),
@@ -150,7 +188,26 @@ class SettingsPageState extends State<Body> {
               child: TextField(
                 controller: intervalController,
                 decoration: const InputDecoration(
-                  hintText: "Interval",
+                  hintText: "Wake up interval",
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: size.height * 0.025,
+            ),
+            const Text("esp32 measurement interval (seconds):"),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              width: size.width * 0.7,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+              ),
+              child: TextField(
+                controller: measurementIntervalController,
+                decoration: const InputDecoration(
+                  hintText: "Measurement interval",
                   border: InputBorder.none,
                 ),
               ),
@@ -168,6 +225,16 @@ class SettingsPageState extends State<Body> {
                       SnackBar(
                         content: Text(
                             "wake up interval will be set to $interval in next wake-up"),
+                      ),
+                    );
+                  }
+                  if (measurementIntervalController.text != "") {
+                    String interval = measurementIntervalController.text;
+                    client.publish("esp32/measurement-interval", interval);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            "measurement interval will be set to $interval in next wake-up"),
                       ),
                     );
                   }
@@ -193,11 +260,14 @@ class SettingsPageState extends State<Body> {
                     var body = json.encode(data);
                     final responseCode = await postCredentials(body);
                     print(responseCode);
-                     ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text("Settings saved")));
+                    // ignore: use_build_context_synchronously
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Settings saved")));
                   }
                 }),
+            SizedBox(
+              height: size.height * 0.025,
+            ),
           ],
         ),
       ),
@@ -207,7 +277,7 @@ class SettingsPageState extends State<Body> {
 
 Future<int> postCredentials(String body) async {
   final response = await http.post(
-    Uri.parse("http://192.168.0.81:8080/waterit/api/account/settings"),
+    Uri.parse("http://172.20.10.3:8080/waterit/api/account/settings"),
     headers: {
       'Authorization': 'Basic $auth',
       'Content-Type': "application/json"

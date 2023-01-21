@@ -7,7 +7,6 @@ import 'package:flutter_app/screens/monitor/components/background.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:flutter_app/components/prefs.dart';
-import 'package:flutter/widgets.dart';
 
 class Body extends StatefulWidget {
   @override
@@ -38,7 +37,7 @@ class _MyMQTTPageState extends State<Body> with WidgetsBindingObserver {
   }
 
   void connect() async {
-    client = MqttServerClient.withPort('192.168.0.81', 'flutter_01', 1883);
+    client = MqttServerClient.withPort('172.20.10.3', 'flutter_01', 1883);
     client.onConnected = onConnected;
     client.logging(on: true);
     client.keepAlivePeriod = 30;

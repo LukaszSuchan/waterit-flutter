@@ -7,7 +7,7 @@ class MQTTClientProvider with ChangeNotifier {
   late MqttClient client;
 
   MQTTClientProvider() {
-    client = MqttServerClient.withPort('192.168.0.81', 'flutter_admin', 1883);
+    client = MqttServerClient.withPort('172.20.10.3', 'flutter_admin', 1883);
     client.logging(on: true);
     client.keepAlivePeriod = 30;
     client.autoReconnect = true;
