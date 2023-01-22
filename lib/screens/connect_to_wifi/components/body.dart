@@ -26,7 +26,7 @@ class SettingsPageState extends State<Body> {
   void initState() {
     super.initState();
     info = NetworkInfo();
-    getWifiSsid();
+    // getWifiSsid();
   }
 
   void getWifiSsid() async {
@@ -58,7 +58,7 @@ class SettingsPageState extends State<Body> {
     Size size = MediaQuery.of(context).size;
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController ssidController =
-        TextEditingController(text: ssid);
+        TextEditingController();
     final TextEditingController serverIpController = TextEditingController();
     final TextEditingController intervalController = TextEditingController();
     final TextEditingController measurementIntervalController =
