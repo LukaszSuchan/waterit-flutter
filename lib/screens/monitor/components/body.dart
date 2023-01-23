@@ -37,7 +37,7 @@ class _MyMQTTPageState extends State<Body> with WidgetsBindingObserver {
   }
 
   void connect() async {
-    client = MqttServerClient.withPort('172.20.10.3', 'flutter_01', 1883);
+    client = MqttServerClient.withPort('172.20.10.2', 'flutter_01', 1883);
     client.onConnected = onConnected;
     client.logging(on: true);
     client.keepAlivePeriod = 30;

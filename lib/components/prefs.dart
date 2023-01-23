@@ -1,3 +1,3 @@
 dynamic auth;
 dynamic currentDevice;
-dynamic light;
+dynamic light = true;

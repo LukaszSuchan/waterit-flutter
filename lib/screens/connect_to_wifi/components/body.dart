@@ -19,33 +19,33 @@ class Body extends StatefulWidget {
 }
 
 class SettingsPageState extends State<Body> {
-  late NetworkInfo info;
+  // late NetworkInfo info;
   String ssid = "ssid";
 
   @override
   void initState() {
     super.initState();
-    info = NetworkInfo();
+    // info = NetworkInfo();
     // getWifiSsid();
   }
 
-  void getWifiSsid() async {
-    final ssidqq = (await info.getWifiName()) ?? "'could't load'";
-    final ssidq = ssidqq.substring(1);
-    List<String> c = ssidq.split("");
-    c.removeLast();
-    ssid = c.join();
-    if (mounted) {
-      setState(() {});
-    }
-  }
+  // void getWifiSsid() async {
+  //   // final ssidqq = (await info.getWifiName()) ?? "'could't load'";
+  //   // final ssidq = ssidqq.substring(1);
+  //   List<String> c = ssidq.split("");
+  //   c.removeLast();
+  //   ssid = c.join();
+  //   if (mounted) {
+  //     setState(() {});
+  //   }
+  // }
 
-  Future<void> refreshSsid() async {
-    getWifiSsid();
-    setState(() {
-      getWifiSsid();
-    });
-  }
+  // Future<void> refreshSsid() async {
+  //   getWifiSsid();
+  //   setState(() {
+  //     getWifiSsid();
+  //   });
+  // }
 
   @override
   void dispose() {
@@ -57,8 +57,7 @@ class SettingsPageState extends State<Body> {
     final client = Provider.of<MQTTClientProvider>(context);
     Size size = MediaQuery.of(context).size;
     final TextEditingController passwordController = TextEditingController();
-    final TextEditingController ssidController =
-        TextEditingController();
+    final TextEditingController ssidController = TextEditingController();
     final TextEditingController serverIpController = TextEditingController();
     final TextEditingController intervalController = TextEditingController();
     final TextEditingController measurementIntervalController =
@@ -78,9 +77,7 @@ class SettingsPageState extends State<Body> {
             ),
             const Text("SSID"),
             GestureDetector(
-              onTap: () {
-                getWifiSsid();
-              },
+              onTap: () {},
               child: Container(
                 margin: const EdgeInsets.symmetric(vertical: 10),
                 padding:
@@ -94,6 +91,7 @@ class SettingsPageState extends State<Body> {
                   controller: ssidController,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
+                    hintText: "SSID",
                   ),
                 ),
               ),
@@ -277,7 +275,7 @@ class SettingsPageState extends State<Body> {
 
 Future<int> postCredentials(String body) async {
   final response = await http.post(
-    Uri.parse("http://172.20.10.3:8080/waterit/api/account/settings"),
+    Uri.parse("http://172.20.10.2:8080/waterit/api/account/settings"),
     headers: {
       'Authorization': 'Basic $auth',
       'Content-Type': "application/json"

@@ -70,7 +70,6 @@ class _PlotState extends State<Body> {
   double _lileftTitlesInterval = 0;
   double _tleftTitlesInterval = 0;
   double _mhleftTitlesInterval = 0;
-  
 
   Future<List<Measurement>> fetchMeasurement() async {
     return await getMeasurement(widget.deviceId);
@@ -202,8 +201,8 @@ class _PlotState extends State<Body> {
     _mhminY = (minY / _divider).floorToDouble() * _divider;
     _mhmaxY = (maxY / _divider).ceilToDouble() * _divider;
 
-    _mhleftTitlesInterval = 3;
-    // ((_maxY - _minY) / (_leftLabelsCount - 1)).floorToDouble();
+    _mhleftTitlesInterval = 
+    ((_mhmaxY - _mhminY) / (_leftLabelsCount - 1)).floorToDouble();
 
     if (!mounted) return;
 
@@ -470,7 +469,7 @@ class _PlotState extends State<Body> {
     return Text(text, style: style, textAlign: TextAlign.center);
   }
 
-   Widget lileftTitleWidgets(double value, TitleMeta meta) {
+  Widget lileftTitleWidgets(double value, TitleMeta meta) {
     const style = TextStyle(
       color: Colors.white,
       fontSize: 13,
@@ -479,7 +478,7 @@ class _PlotState extends State<Body> {
     return Text(text, style: style, textAlign: TextAlign.center);
   }
 
-   Widget tleftTitleWidgets(double value, TitleMeta meta) {
+  Widget tleftTitleWidgets(double value, TitleMeta meta) {
     const style = TextStyle(
       color: Colors.white,
       fontSize: 13,
@@ -505,6 +504,7 @@ class _PlotState extends State<Body> {
       },
     );
   }
+
   FlGridData _temperatureGridData() {
     return FlGridData(
       show: true,
@@ -522,6 +522,7 @@ class _PlotState extends State<Body> {
       },
     );
   }
+
   FlGridData _lightIntensityGridData() {
     return FlGridData(
       show: true,
@@ -539,6 +540,7 @@ class _PlotState extends State<Body> {
       },
     );
   }
+
   FlGridData _moistureHumidityGridData() {
     return FlGridData(
       show: true,
@@ -606,7 +608,7 @@ class _PlotState extends State<Body> {
 Future<List<Measurement>> getMeasurement(int id) async {
   print(id);
   final response = await http.get(
-      Uri.parse("http://172.20.10.3:8080/waterit/api/device/$id/history"),
+      Uri.parse("http://172.20.10.2:8080/waterit/api/device/$id/history"),
       headers: {HttpHeaders.authorizationHeader: 'Basic $auth'});
 
   if (response.statusCode == 200) {

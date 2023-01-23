@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/components/prefs.dart';
+import 'package:flutter_app/providers/mqtt_client_provider.dart';
 import 'package:flutter_app/screens/login/components/background.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:provider/provider.dart';
 
 class Body extends StatefulWidget {
   const Body({super.key});
@@ -69,6 +72,7 @@ class _DeviceListScreenState extends State<Body> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+
     return Background(
       child: RefreshIndicator(
         onRefresh: findDevices,
@@ -126,49 +130,76 @@ class _DeviceListScreenState extends State<Body> {
                                   }
                                 }
                               }
-                              showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                        title: Text("Insert device name"),
-                                        content: TextField(
-                                          autofocus: true,
-                                          controller: deviceNameController,
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () async {
-                                                Map data = {
-                                                  "name": device.name,
-                                                  "deviceName":
-                                                      deviceNameController.text,
-                                                  "active": true
-                                                };
-                                                var body = json.encode(data);
-                                                final responseCode =
-                                                    await _addDevice(body);
-                                                print(responseCode);
-                                                device
-                                                    .disconnect()
-                                                    .whenComplete(() {
-                                                  String deviceName =
-                                                      device.name;
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                          "Waiting for activation of $deviceName"),
-                                                    ),
-                                                  );
-                                                  findDevices();
-                                                  if (!mounted) return;
-                                                  setState(() => devicesList.removeAt(index));
-                                                });
-                                                // ignore: use_build_context_synchronously
-                                                Navigator.pop(context);
-                                              },
-                                              child: const Text("SUBMIT"))
-                                        ],
-                                      ));
+                              String deviceName = device.name;
+                              // ignore: use_build_context_synchronously
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      "Waiting for activation of $deviceName"),
+                                ),
+                              );
+                              Future.delayed(const Duration(seconds: 15), () async {
+                                if (await reciveConfirmation(deviceName)) {
+                                  showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                            title: const Text(
+                                                "Insert device name"),
+                                            content: TextField(
+                                              autofocus: true,
+                                              controller: deviceNameController,
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                  onPressed: () async {
+                                                    Map data = {
+                                                      "name": device.name,
+                                                      "deviceName":
+                                                          deviceNameController
+                                                              .text,
+                                                      "active": true
+                                                    };
+                                                    var body =
+                                                        json.encode(data);
+                                                    final responseCode =
+                                                        await _addDevice(body);
+                                                    print(responseCode);
+                                                    device
+                                                        .disconnect()
+                                                        .whenComplete(() {
+                                                      String deviceName =
+                                                          device.name;
+                                                      String name =
+                                                          deviceNameController
+                                                              .text;
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                              "Sucessfully added $name"),
+                                                        ),
+                                                      );
+                                                      findDevices();
+                                                      if (!mounted) return;
+                                                      setState(() => devicesList
+                                                          .removeAt(index));
+                                                    });
+                                                    // ignore: use_build_context_synchronously
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: const Text("SUBMIT"))
+                                            ],
+                                          ));
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          "Something went wront while activate of $deviceName, it's probably lack of wifi"),
+                                    ),
+                                  );
+                                }
+                              });
                             },
                           );
                         },
@@ -207,7 +238,7 @@ class _DeviceListScreenState extends State<Body> {
 
 Future<int> _addDevice(String body) async {
   final response = await http.post(
-    Uri.parse("http://172.20.10.3:8080/waterit/api/device"),
+    Uri.parse("http://172.20.10.2:8080/waterit/api/device"),
     headers: {
       'Authorization': 'Basic $auth',
       "Content-Type": "application/json"
@@ -225,7 +256,7 @@ Future<int> _addDevice(String body) async {
 
 Future<http.Response> _getWifiCredentials() async {
   final response = await http.get(
-    Uri.parse("http://172.20.10.3:8080/waterit/api/account/settings"),
+    Uri.parse("http://172.20.10.2:8080/waterit/api/account/settings"),
     headers: {'Authorization': 'Basic $auth'},
   );
   if (response.statusCode == 200) {
@@ -234,5 +265,18 @@ Future<http.Response> _getWifiCredentials() async {
     throw Exception("Unauthorized");
   } else {
     throw Exception("Wystąpił nieoczekiwany błąd");
+  }
+}
+
+Future<bool> reciveConfirmation(String device) async {
+  final response = await http.get(
+    Uri.parse("http://172.20.10.2:8080/waterit/api/device/esp/$device/confirm"),
+  );
+  if (response.statusCode == 200) {
+    return true;
+  } else if (response.statusCode == 401) {
+    return false;
+  } else {
+    return false;
   }
 }

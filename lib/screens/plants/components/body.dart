@@ -37,7 +37,7 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
 
   fetchDevices() async {
     var response = await http.get(
-      Uri.parse("http://172.20.10.3:8080/waterit/api/device"),
+      Uri.parse("http://172.20.10.2:8080/waterit/api/device"),
       headers: {'Authorization': 'Basic $auth'},
     );
 
@@ -158,7 +158,7 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
 Future<int> _deleteDevice(int id) async {
   print(auth);
   final response = await http.delete(
-    Uri.parse("http://172.20.10.3:8080/waterit/api/device/$id"),
+    Uri.parse("http://172.20.10.2:8080/waterit/api/device/$id"),
     headers: {'Authorization': 'Basic $auth'},
   );
   if (response.statusCode == 204) {
