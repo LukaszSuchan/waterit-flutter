@@ -66,10 +66,10 @@ class _PlotState extends State<Body> {
   double _mhmaxX = 0;
   double _mhminY = 0;
   double _mhmaxY = 0;
-  double _hleftTitlesInterval = 0;
-  double _lileftTitlesInterval = 0;
-  double _tleftTitlesInterval = 0;
-  double _mhleftTitlesInterval = 0;
+  double _hleftTitlesInterval = 1;
+  double _lileftTitlesInterval = 1;
+  double _tleftTitlesInterval = 1;
+  double _mhleftTitlesInterval = 1;
 
   Future<List<Measurement>> fetchMeasurement() async {
     return await getMeasurement(widget.deviceId);
@@ -108,10 +108,10 @@ class _PlotState extends State<Body> {
     _hminX = _humidityValues.first.x;
     _hmaxX = _humidityValues.last.x;
     _hminY = minY;
-    _hmaxY = maxY;
+    _hmaxY = (maxY+0.1).ceilToDouble();
 
     _hleftTitlesInterval =
-        ((_hmaxY - _hminY) / (_leftLabelsCount - 1)).floorToDouble();
+        ((_hmaxY - _hminY) / (_leftLabelsCount - 1)).ceilToDouble();
 
     if (!mounted) return;
 
@@ -137,10 +137,10 @@ class _PlotState extends State<Body> {
     _liminX = _lightIntensityValues.first.x;
     _limaxX = _lightIntensityValues.last.x;
     _liminY = minY;
-    _limaxY = maxY;
+    _limaxY = maxY+0.1;
 
     _lileftTitlesInterval =
-        ((_limaxY - _liminY) / (_leftLabelsCount - 1)).floorToDouble();
+        ((_limaxY - _liminY) / (_leftLabelsCount - 1)).ceilToDouble();
 
     if (!mounted) return;
 
@@ -166,10 +166,10 @@ class _PlotState extends State<Body> {
     _tminX = _temperatureValues.first.x;
     _tmaxX = _temperatureValues.last.x;
     _tminY = minY;
-    _tmaxY = maxY;
+    _tmaxY = (maxY+0.1).ceilToDouble();
 
     _tleftTitlesInterval =
-        ((_tmaxY - _tminY) / (_leftLabelsCount - 1)).floorToDouble();
+        ((_tmaxY - _tminY) / (_leftLabelsCount - 1)).ceilToDouble();
 
     if (!mounted) return;
 
@@ -202,7 +202,7 @@ class _PlotState extends State<Body> {
     _mhmaxY = maxY;
 
     _mhleftTitlesInterval =
-        ((_mhmaxY - _mhminY) / (_leftLabelsCount - 1)).floorToDouble();
+        ((_mhmaxY - _mhminY) / (_leftLabelsCount - 1)).ceilToDouble();
 
     if (!mounted) return;
 

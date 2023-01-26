@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class Body extends StatefulWidget {
   const Body({super.key});
@@ -30,6 +31,13 @@ class _DeviceListScreenState extends State<Body> {
   late Map wifiCredentials;
   late bool canSave;
   late TextEditingController deviceNameController;
+  late bool loading = false;
+
+  // ignore: prefer_const_constructors
+  SpinKitRotatingCircle spinkit = SpinKitRotatingCircle(
+    color: Colors.white,
+    size: 50.0,
+  );
 
   Future<void> findDevices() async {
     devicesList.clear();
@@ -42,6 +50,7 @@ class _DeviceListScreenState extends State<Body> {
         if (!devicesList.contains(r.device)) {
           if (!mounted) return;
           setState(() => devicesList.add(r.device));
+          flutterBlue.startScan(timeout: const Duration(milliseconds: 100));
         }
       });
     });
@@ -75,172 +84,210 @@ class _DeviceListScreenState extends State<Body> {
     Size size = MediaQuery.of(context).size;
 
     return Background(
-      child: RefreshIndicator(
-        onRefresh: findDevices,
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                scrollDirection: Axis.vertical,
-                padding: const EdgeInsets.only(left: 10, right: 10),
-                itemCount: devicesList.length,
-                itemBuilder: (context, index) {
-                  var device = devicesList[index];
-                  return GestureDetector(
-                    onTap: () async {
-                      device.connect(autoConnect: false).whenComplete(
-                        () async {
-                          try {
-                            final response = await _getWifiCredentials();
-                            wifiCredentials = json.decode(response.body);
-                            final ssid = wifiCredentials["ssid"];
-                            final wifiPassword =
-                                wifiCredentials["wifiPassword"];
-                            final ipServer = wifiCredentials["serverIp"];
-                            request1 = utf8.encode('{"S":"$ssid"}');
-                            request2 = utf8.encode('{"P":"$wifiPassword"}');
-                            request3 = utf8.encode('{"I": "$ipServer"}');
-                            canSave = true;
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Error while parse credentials"),
-                              ),
-                            );
-                          }
-                          await device.discoverServices().then(
-                            (services) async {
-                              for (var service in services) {
-                                print(service.uuid.toString());
-                                if (service.uuid
-                                    .toString()
-                                    .startsWith('0000180a')) {
-                                  for (var characteristic
-                                      in service.characteristics) {
-                                    print(characteristic.uuid.toString());
-                                    if (characteristic.uuid
-                                        .toString()
-                                        .startsWith('0000dead')) {
-                                      await characteristic.write((request1),
-                                          withoutResponse: true);
-                                    } else if (characteristic.uuid
-                                        .toString()
-                                        .startsWith('0000deae')) {
-                                      await characteristic.write((request2),
-                                          withoutResponse: true);
-                                    } else if (characteristic.uuid
-                                        .toString()
-                                        .startsWith('0000deaf')) {
-                                      await characteristic.write((request3),
-                                          withoutResponse: true);
-                                    }
-                                  }
-                                }
-                              }
-                              String deviceName = device.name;
-                              // ignore: use_build_context_synchronously
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      "Waiting for activation of $deviceName"),
-                                ),
-                              );
-                              Future.delayed(const Duration(seconds: 15),
-                                  () async {
-                                if (await reciveConfirmation(deviceName)) {
-                                  showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                            title: const Text(
-                                                "Insert device name"),
-                                            content: TextField(
-                                              autofocus: true,
-                                              controller: deviceNameController,
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                  onPressed: () async {
-                                                    Map data = {
-                                                      "name": device.name,
-                                                      "deviceName":
-                                                          deviceNameController
-                                                              .text,
-                                                      "active": true
-                                                    };
-                                                    var body =
-                                                        json.encode(data);
-                                                    final responseCode =
-                                                        await _addDevice(body);
-                                                    print(responseCode);
-                                                    device
-                                                        .disconnect()
-                                                        .whenComplete(() {
-                                                      String deviceName =
-                                                          device.name;
-                                                      String name =
-                                                          deviceNameController
-                                                              .text;
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                              "Sucessfully added $name"),
-                                                        ),
-                                                      );
-                                                      findDevices();
-                                                      if (!mounted) return;
-                                                      setState(() => devicesList
-                                                          .removeAt(index));
-                                                    });
-                                                    // ignore: use_build_context_synchronously
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: const Text("SUBMIT"))
-                                            ],
-                                          ));
-                                } else {
+      child: loading
+          ? spinkit
+          : RefreshIndicator(
+              onRefresh: findDevices,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      scrollDirection: Axis.vertical,
+                      padding: const EdgeInsets.only(left: 10, right: 10),
+                      itemCount: devicesList.length,
+                      itemBuilder: (context, index) {
+                        var device = devicesList[index];
+                        return GestureDetector(
+                          onTap: () async {
+                            device.connect(autoConnect: false).whenComplete(
+                              () async {
+                                try {
+                                  final response = await _getWifiCredentials();
+                                  wifiCredentials = json.decode(response.body);
+                                  final ssid = wifiCredentials["ssid"];
+                                  final wifiPassword =
+                                      wifiCredentials["wifiPassword"];
+                                  final ipServer = wifiCredentials["serverIp"];
+                                  request1 = utf8.encode('{"S":"$ssid"}');
+                                  request2 =
+                                      utf8.encode('{"P":"$wifiPassword"}');
+                                  request3 = utf8.encode('{"I": "$ipServer"}');
+                                  canSave = true;
+                                } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          "Something went wront while activate of $deviceName, it's probably lack of wifi"),
+                                    const SnackBar(
+                                      content:
+                                          Text("Error while parse credentials"),
                                     ),
                                   );
                                 }
-                              });
-                            },
-                          );
-                        },
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(top: 10),
-                      height: 80,
-                      width: size.width * 0.8,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.blue[400],
-                      ),
-                      child: Center(
-                        child: Text(
-                          device.name,
-                          style: TextStyle(
-                              color: Colors.grey[850],
-                              fontStyle: FontStyle.italic,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Open Sans',
-                              fontSize: 24),
-                        ),
-                      ),
+                                await device.discoverServices().then(
+                                  (services) async {
+                                    for (var service in services) {
+                                      print(service.uuid.toString());
+                                      if (service.uuid
+                                          .toString()
+                                          .startsWith('0000180a')) {
+                                        for (var characteristic
+                                            in service.characteristics) {
+                                          print(characteristic.uuid.toString());
+                                          if (characteristic.uuid
+                                              .toString()
+                                              .startsWith('0000dead')) {
+                                            await characteristic.write(
+                                                (request1),
+                                                withoutResponse: true);
+                                          } else if (characteristic.uuid
+                                              .toString()
+                                              .startsWith('0000deae')) {
+                                            await characteristic.write(
+                                                (request2),
+                                                withoutResponse: true);
+                                          } else if (characteristic.uuid
+                                              .toString()
+                                              .startsWith('0000deaf')) {
+                                            await characteristic.write(
+                                                (request3),
+                                                withoutResponse: true);
+                                          }
+                                        }
+                                      }
+                                    }
+                                    currentDevice = device.name;
+                                    // ignore: use_build_context_synchronously
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        duration: const Duration(seconds: 29),
+                                        content: Row(
+                                          children: <Widget>[
+                                            const CircularProgressIndicator(),
+                                            Padding(
+                                              padding:
+                                                  EdgeInsets.only(left: 20),
+                                              child: Text(
+                                                  "Waiting for activation of $currentDevice"),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                    Future.delayed(const Duration(seconds: 30),
+                                        () async {
+                                      if (await reciveConfirmation(
+                                          currentDevice)) {
+                                        showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                                  title: const Text(
+                                                      "Insert device name"),
+                                                  content: TextField(
+                                                    autofocus: true,
+                                                    controller:
+                                                        deviceNameController,
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                        onPressed: () async {
+                                                          Map data = {
+                                                            "name": device.name,
+                                                            "deviceName":
+                                                                deviceNameController
+                                                                    .text,
+                                                            "active": true
+                                                          };
+                                                          var body =
+                                                              json.encode(data);
+                                                          final responseCode =
+                                                              await _addDevice(
+                                                                  body);
+                                                          print(responseCode);
+                                                          device
+                                                              .disconnect()
+                                                              .whenComplete(() {
+                                                            String deviceName =
+                                                                device.name;
+                                                            String name =
+                                                                deviceNameController
+                                                                    .text;
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                    "Sucessfully added $name"),
+                                                              ),
+                                                            );
+                                                            findDevices();
+                                                            if (!mounted)
+                                                              return;
+                                                            setState(() {
+                                                              devicesList
+                                                                  .removeAt(
+                                                                      index);
+                                                            });
+                                                          });
+                                                          // ignore: use_build_context_synchronously
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                        child: const Text(
+                                                            "SUBMIT"))
+                                                  ],
+                                                ));
+                                      } else {
+                                        showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                                  title: const Text(
+                                                      "Something went wrong"),
+                                                  content: Text(
+                                                      "Something went wront while activate of $currentDevice, it's probably lack of wifi"),
+                                                  actions: [
+                                                    TextButton(
+                                                        onPressed: () {
+                                                          // ignore: use_build_context_synchronously
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                        child: const Text(
+                                                            "SUBMIT"))
+                                                  ],
+                                                ));
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            height: 80,
+                            width: size.width * 0.8,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.blue[400],
+                            ),
+                            child: Center(
+                              child: Text(
+                                device.name,
+                                style: TextStyle(
+                                    color: Colors.grey[850],
+                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'Open Sans',
+                                    fontSize: 24),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  )
+                ],
               ),
-            )
-          ],
-        ),
-      ),
+            ),
     );
   }
 }

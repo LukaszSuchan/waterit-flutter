@@ -7,6 +7,7 @@ import 'package:flutter_app/screens/monitor/components/background.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:flutter_app/components/prefs.dart';
+import 'package:http/http.dart' as http;
 
 class Body extends StatefulWidget {
   @override
@@ -20,13 +21,20 @@ class _MyMQTTPageState extends State<Body> with WidgetsBindingObserver {
   String param2 = '-';
   String param3 = '-';
   String param4 = '-';
+  String externalTemp = '-';
   late MqttClient client;
+
+  Future<void> fetchData() async {
+    externalTemp = await _getExternalTemperature();
+    setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     connect();
+    fetchData();
   }
 
   @override
@@ -113,122 +121,174 @@ class _MyMQTTPageState extends State<Body> with WidgetsBindingObserver {
         fontWeight: FontWeight.w700,
         fontFamily: 'Open Sans',
         fontSize: 30);
+    TextStyle textStyleForExternalTemperature = TextStyle(
+        color: Colors.grey[850],
+        fontStyle: FontStyle.italic,
+        fontWeight: FontWeight.w700,
+        fontFamily: 'Open Sans',
+        fontSize: 20);
     RoundedRectangleBorder cardShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(20),
     );
-    return Background(
-      image: Padding(
-        padding: const EdgeInsets.only(top: 600),
-        child: Image.asset(
-          "assets/images/ecology.png",
-          width: size.width * 0.6,
+    return RefreshIndicator(
+      onRefresh: fetchData,
+      child: Background(
+        image: Padding(
+          padding: const EdgeInsets.only(top: 500),
+          child: Image.asset(
+            "assets/images/ecology.png",
+            width: size.width * 0.6,
+          ),
         ),
-      ),
-      image2: Container(
-        alignment: Alignment.topRight,
-        padding: const EdgeInsets.only(top: 50),
-        margin: const EdgeInsets.only(right: 60),
-        child: Image.asset(
-          "assets/images/gardening.png",
-          width: size.width * 0.3,
+        child2: Container(
+          alignment: Alignment.topLeft,
+          height: 150,
+          width: 150,
+          margin: const EdgeInsets.only(bottom: 500, right: 180),
+          child: Card(
+            shape: cardShape,
+            color: const Color.fromARGB(255, 212, 209, 10),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  Text(
+                    'External Temperature',
+                    style: textStyle,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Text(
+                      sanitize('$externalTemp °C'),
+                      style: textStyleForExternalTemperature,
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
-      child: GridView.count(
-        padding: const EdgeInsets.only(top: 190, left: 20, right: 20),
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        children: [
-          Card(
-            shape: cardShape,
-            color: const Color.fromARGB(255, 249, 178, 214),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Text(
-                    'Light intensity',
-                    style: textStyle,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 40),
-                    child: Text(
-                      '$param1 lux',
-                      style: textStyleForParams,
+        image2: Container(
+          alignment: Alignment.topRight,
+          padding: const EdgeInsets.only(top: 50),
+          margin: const EdgeInsets.only(right: 60),
+          child: Image.asset(
+            "assets/images/gardening.png",
+            width: size.width * 0.3,
+          ),
+        ),
+        child: GridView.count(
+          padding: const EdgeInsets.only(top: 190, left: 20, right: 20),
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          children: [
+            Card(
+              shape: cardShape,
+              color: const Color.fromARGB(255, 249, 178, 214),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Text(
+                      'Light intensity',
+                      style: textStyle,
                     ),
-                  )
-                ],
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Text(
+                        '$param1 lux',
+                        style: textStyleForParams,
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
-          ),
-          Card(
-            shape: cardShape,
-            color: Color.fromARGB(255, 255, 165, 79),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Text(
-                    'Temperature',
-                    style: textStyle,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 40),
-                    child: Text(
-                      sanitize('$param2 °C'),
-                      style: textStyleForParams,
+            Card(
+              shape: cardShape,
+              color: Color.fromARGB(255, 255, 165, 79),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Text(
+                      'Temperature',
+                      style: textStyle,
                     ),
-                  )
-                ],
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Text(
+                        sanitize('$param2 °C'),
+                        style: textStyleForParams,
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
-          ),
-          Card(
-            shape: cardShape,
-            color: Color.fromARGB(255, 91, 132, 254),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Text(
-                    'Humidity',
-                    style: textStyle,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 40),
-                    child: Text(
-                      '$param3 %',
-                      style: textStyleForParams,
+            Card(
+              shape: cardShape,
+              color: Color.fromARGB(255, 91, 132, 254),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Text(
+                      'Humidity',
+                      style: textStyle,
                     ),
-                  )
-                ],
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Text(
+                        '$param3 %',
+                        style: textStyleForParams,
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
-          ),
-          Card(
-            shape: cardShape,
-            color: Color.fromARGB(255, 0, 212, 152),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Text(
-                    'Moisture humidity',
-                    style: textStyle,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 40),
-                    child: Text(
-                      '$param4 %',
-                      style: textStyleForParams,
+            Card(
+              shape: cardShape,
+              color: Color.fromARGB(255, 0, 212, 152),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Text(
+                      'Moisture humidity',
+                      style: textStyle,
                     ),
-                  )
-                ],
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Text(
+                        '$param4 %',
+                        style: textStyleForParams,
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+}
+
+Future<String> _getExternalTemperature() async {
+  final response = await http.get(
+    Uri.parse(
+        "http://$globalIpServer:8080/waterit/api/device/$currentDevice/history/external-temperature"),
+    headers: {'Authorization': 'Basic $auth'},
+  );
+  if (response.statusCode == 200) {
+    return json.decode(response.body)["externalTemperature"].toString();
+  } else if (response.statusCode == 401) {
+    throw Exception("Unauthorized");
+  } else {
+    throw Exception("Wystąpił nieoczekiwany błąd");
   }
 }

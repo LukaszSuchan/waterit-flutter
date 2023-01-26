@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 
 class Background extends StatelessWidget {
   final Widget child;
+  final Widget child2;
   final Widget image;
   final Widget image2;
   const Background({
     Key? key,
     required this.child,
     required this.image, 
-    required this.image2,
+    required this.image2, required this.child2,
   }) : super(key: key);
 
   @override
@@ -20,7 +21,7 @@ class Background extends StatelessWidget {
       color: Colors.green,
       child: Stack(
         alignment: Alignment.center,
-        children: <Widget>[child, image, image2],
+        children: <Widget>[child, child2, image, image2],
       ),
     );
   }

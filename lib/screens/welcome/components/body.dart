@@ -18,64 +18,66 @@ class Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
     return Background(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          TextFieldContainer(
-            child: TextField(
-              controller: serverIpController,
-              decoration: const InputDecoration(
-                icon: Icon(
-                  Icons.cloud,
-                  color: Colors.green,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            TextFieldContainer(
+              child: TextField(
+                controller: serverIpController,
+                decoration: const InputDecoration(
+                  icon: Icon(
+                    Icons.cloud,
+                    color: Colors.green,
+                  ),
+                  hintText: "Ip server",
+                  border: InputBorder.none,
                 ),
-                hintText: "Your Email",
-                border: InputBorder.none,
               ),
             ),
-          ),
-          const SizedBox(height: 20,),
-          Container(
-            margin: const EdgeInsets.only(bottom: 40),
-            child: const Text(
-              "Welcome to WaterIt",
-              style:
-                  TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            const SizedBox(height: 20,),
+            Container(
+              margin: const EdgeInsets.only(bottom: 40),
+              child: const Text(
+                "Welcome to WaterIt",
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              ),
             ),
-          ),
-          SvgPicture.asset(
-            "assets/icons/plant.svg",
-            height: size.height * 0.30,
-          ),
-          RoundedButton(
-            text: "LOGIN",
-            press: () {
-              globalIpServer = serverIpController.text;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) {
-                    return const LoginScreen();
-                  },
-                ),
-              );
-            },
-          ),
-          RoundedButton(
-            text: "SIGNUP",
-            press: () {
-              globalIpServer = serverIpController.text;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) {
-                    return const SignupScreen();
-                  },
-                ),
-              );
-            },
-          ),
-        ],
+            SvgPicture.asset(
+              "assets/icons/plant.svg",
+              height: size.height * 0.30,
+            ),
+            RoundedButton(
+              text: "LOGIN",
+              press: () {
+                globalIpServer = serverIpController.text;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return const LoginScreen();
+                    },
+                  ),
+                );
+              },
+            ),
+            RoundedButton(
+              text: "SIGNUP",
+              press: () {
+                globalIpServer = serverIpController.text;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return const SignupScreen();
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
