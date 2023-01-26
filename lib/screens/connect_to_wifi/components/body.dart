@@ -58,7 +58,7 @@ class SettingsPageState extends State<Body> {
     Size size = MediaQuery.of(context).size;
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController ssidController = TextEditingController();
-    final TextEditingController serverIpController = TextEditingController();
+    final TextEditingController serverIpController = TextEditingController(text: globalIpServer);
     final TextEditingController intervalController = TextEditingController();
     final TextEditingController measurementIntervalController =
         TextEditingController();
@@ -126,9 +126,10 @@ class SettingsPageState extends State<Body> {
                 color: Colors.white,
               ),
               child: TextField(
+                enabled: false,
                 controller: serverIpController,
-                decoration: const InputDecoration(
-                  hintText: "Server IP",
+                decoration: InputDecoration(
+                  hintText: globalIpServer,
                   border: InputBorder.none,
                 ),
               ),
@@ -250,7 +251,7 @@ class SettingsPageState extends State<Body> {
                     data["wifiPassword"] = passwordController.text;
                     toSend = true;
                   }
-                  if (ssidController.text.isNotEmpty) {
+                  if (serverIpController.text.isNotEmpty) {
                     data["serverIp"] = serverIpController.text;
                     toSend = true;
                   }
@@ -275,7 +276,7 @@ class SettingsPageState extends State<Body> {
 
 Future<int> postCredentials(String body) async {
   final response = await http.post(
-    Uri.parse("http://172.20.10.2:8080/waterit/api/account/settings"),
+    Uri.parse("http://$globalIpServer:8080/waterit/api/account/settings"),
     headers: {
       'Authorization': 'Basic $auth',
       'Content-Type': "application/json"

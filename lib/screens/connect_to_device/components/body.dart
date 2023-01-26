@@ -23,6 +23,7 @@ class _DeviceListScreenState extends State<Body> {
   Utf8Encoder encoder = const Utf8Encoder();
   late List<int> request1;
   late List<int> request2;
+  late List<int> request3;
   late List<BluetoothDevice> devicesList;
   late bool isScanning;
   JsonCodec json = const JsonCodec();
@@ -96,8 +97,10 @@ class _DeviceListScreenState extends State<Body> {
                             final ssid = wifiCredentials["ssid"];
                             final wifiPassword =
                                 wifiCredentials["wifiPassword"];
+                            final ipServer = wifiCredentials["serverIp"];
                             request1 = utf8.encode('{"S":"$ssid"}');
                             request2 = utf8.encode('{"P":"$wifiPassword"}');
+                            request3 = utf8.encode('{"I": "$ipServer"}');
                             canSave = true;
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -126,6 +129,11 @@ class _DeviceListScreenState extends State<Body> {
                                         .startsWith('0000deae')) {
                                       await characteristic.write((request2),
                                           withoutResponse: true);
+                                    } else if (characteristic.uuid
+                                        .toString()
+                                        .startsWith('0000deaf')) {
+                                      await characteristic.write((request3),
+                                          withoutResponse: true);
                                     }
                                   }
                                 }
@@ -138,7 +146,8 @@ class _DeviceListScreenState extends State<Body> {
                                       "Waiting for activation of $deviceName"),
                                 ),
                               );
-                              Future.delayed(const Duration(seconds: 15), () async {
+                              Future.delayed(const Duration(seconds: 15),
+                                  () async {
                                 if (await reciveConfirmation(deviceName)) {
                                   showDialog(
                                       context: context,
@@ -238,7 +247,7 @@ class _DeviceListScreenState extends State<Body> {
 
 Future<int> _addDevice(String body) async {
   final response = await http.post(
-    Uri.parse("http://172.20.10.2:8080/waterit/api/device"),
+    Uri.parse("http://$globalIpServer:8080/waterit/api/device"),
     headers: {
       'Authorization': 'Basic $auth',
       "Content-Type": "application/json"
@@ -256,7 +265,7 @@ Future<int> _addDevice(String body) async {
 
 Future<http.Response> _getWifiCredentials() async {
   final response = await http.get(
-    Uri.parse("http://172.20.10.2:8080/waterit/api/account/settings"),
+    Uri.parse("http://$globalIpServer:8080/waterit/api/account/settings"),
     headers: {'Authorization': 'Basic $auth'},
   );
   if (response.statusCode == 200) {
@@ -270,7 +279,8 @@ Future<http.Response> _getWifiCredentials() async {
 
 Future<bool> reciveConfirmation(String device) async {
   final response = await http.get(
-    Uri.parse("http://172.20.10.2:8080/waterit/api/device/esp/$device/confirm"),
+    Uri.parse(
+        "http://$globalIpServer:8080/waterit/api/device/esp/$device/confirm"),
   );
   if (response.statusCode == 200) {
     return true;

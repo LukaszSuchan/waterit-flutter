@@ -123,7 +123,7 @@ class Body extends StatelessWidget {
 Future<int> _attemptLogin(String username, String password) async {
   auth = base64.encode(utf8.encode('$username:$password'));
   final response = await http.get(
-    Uri.parse("http://172.20.10.2:8080/waterit/api/account"),
+    Uri.parse("http://$globalIpServer:8080/waterit/api/account"),
     headers: {'Authorization': 'Basic $auth'},
   );
   var x;

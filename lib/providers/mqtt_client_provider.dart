@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_app/components/prefs.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:provider/provider.dart';
@@ -7,7 +8,8 @@ class MQTTClientProvider with ChangeNotifier {
   late MqttClient client;
 
   MQTTClientProvider() {
-    client = MqttServerClient.withPort('172.20.10.2', 'flutter_admin', 1883);
+    client =
+        MqttServerClient.withPort(globalIpServer, 'flutter_admin', 1883);
     client.logging(on: true);
     client.keepAlivePeriod = 30;
     client.autoReconnect = true;

@@ -107,8 +107,8 @@ class _PlotState extends State<Body> {
 
     _hminX = _humidityValues.first.x;
     _hmaxX = _humidityValues.last.x;
-    _hminY = (minY / _divider).floorToDouble() * _divider;
-    _hmaxY = (maxY / _divider).ceilToDouble() * _divider;
+    _hminY = minY;
+    _hmaxY = maxY;
 
     _hleftTitlesInterval =
         ((_hmaxY - _hminY) / (_leftLabelsCount - 1)).floorToDouble();
@@ -136,8 +136,8 @@ class _PlotState extends State<Body> {
 
     _liminX = _lightIntensityValues.first.x;
     _limaxX = _lightIntensityValues.last.x;
-    _liminY = (minY / _divider).floorToDouble() * _divider;
-    _limaxY = (maxY / _divider).ceilToDouble() * _divider;
+    _liminY = minY;
+    _limaxY = maxY;
 
     _lileftTitlesInterval =
         ((_limaxY - _liminY) / (_leftLabelsCount - 1)).floorToDouble();
@@ -165,8 +165,8 @@ class _PlotState extends State<Body> {
 
     _tminX = _temperatureValues.first.x;
     _tmaxX = _temperatureValues.last.x;
-    _tminY = (minY / _divider).floorToDouble() * _divider;
-    _tmaxY = (maxY / _divider).ceilToDouble() * _divider;
+    _tminY = minY;
+    _tmaxY = maxY;
 
     _tleftTitlesInterval =
         ((_tmaxY - _tminY) / (_leftLabelsCount - 1)).floorToDouble();
@@ -198,11 +198,11 @@ class _PlotState extends State<Body> {
 
     _mhminX = _moistureHumidityValues.first.x;
     _mhmaxX = _moistureHumidityValues.last.x;
-    _mhminY = (minY / _divider).floorToDouble() * _divider;
-    _mhmaxY = (maxY / _divider).ceilToDouble() * _divider;
+    _mhminY = minY;
+    _mhmaxY = maxY;
 
-    _mhleftTitlesInterval = 
-    ((_mhmaxY - _mhminY) / (_leftLabelsCount - 1)).floorToDouble();
+    _mhleftTitlesInterval =
+        ((_mhmaxY - _mhminY) / (_leftLabelsCount - 1)).floorToDouble();
 
     if (!mounted) return;
 
@@ -608,7 +608,7 @@ class _PlotState extends State<Body> {
 Future<List<Measurement>> getMeasurement(int id) async {
   print(id);
   final response = await http.get(
-      Uri.parse("http://172.20.10.2:8080/waterit/api/device/$id/history"),
+      Uri.parse("http://$globalIpServer:8080/waterit/api/device/$id/history"),
       headers: {HttpHeaders.authorizationHeader: 'Basic $auth'});
 
   if (response.statusCode == 200) {

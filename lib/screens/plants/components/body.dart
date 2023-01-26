@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/providers/mqtt_client_provider.dart';
 import 'package:flutter_app/screens/monitor/monitor_screen.dart';
 import 'package:flutter_app/screens/plants/components/background.dart';
+import 'package:flutter_app/screens/plot/home_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_app/components/prefs.dart';
@@ -37,7 +38,7 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
 
   fetchDevices() async {
     var response = await http.get(
-      Uri.parse("http://172.20.10.2:8080/waterit/api/device"),
+      Uri.parse("http://$globalIpServer:8080/waterit/api/device"),
       headers: {'Authorization': 'Basic $auth'},
     );
 
@@ -105,22 +106,38 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
                     ),
                     child: InkWell(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                              currentDevice = device["name"];
-                              return MonitorScreen(device["id"]);
-                            },
-                          ),
-                        );
+                        if (device["active"] == true) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) {
+                                currentDevice = device["name"];
+                                return MonitorScreen(device["id"]);
+                              },
+                            ),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) {
+                                currentDevice = device["name"];
+                                return PlotScreen(
+                                  externalDeviceId: device["id"],
+                                );
+                              },
+                            ),
+                          );
+                        }
                       },
                       child: Container(
                         height: 70,
                         width: size.width,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          color: Colors.amber[300],
+                          color: device["active"] == true
+                              ? Colors.amber[300]
+                              : Color.fromARGB(255, 151, 147, 136),
                         ),
                         child: Center(
                           child: Text(
@@ -158,7 +175,7 @@ class DevicePageState extends State<Body> with AutomaticKeepAliveClientMixin {
 Future<int> _deleteDevice(int id) async {
   print(auth);
   final response = await http.delete(
-    Uri.parse("http://172.20.10.2:8080/waterit/api/device/$id"),
+    Uri.parse("http://$globalIpServer:8080/waterit/api/device/$id"),
     headers: {'Authorization': 'Basic $auth'},
   );
   if (response.statusCode == 204) {

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_app/components/prefs.dart';
 import 'package:flutter_app/components/rounded_button.dart';
 import 'package:flutter_app/components/text_field_container.dart';
 import 'package:flutter_app/screens/login/login_screen.dart';
@@ -124,7 +125,7 @@ Future<int> _attemptRegister(String username, String password) async {
   Map data = {"email": username, "password": password, "enabled": true};
   var body = json.encode(data);
   final response = await http.post(
-      Uri.parse("http://172.20.10.2:8080/waterit/api/account/register"),
+      Uri.parse("http://$globalIpServer:8080/waterit/api/account/register"),
       headers: {"Content-Type": "application/json"},
       body: body);
   if (response.statusCode == 201) {
