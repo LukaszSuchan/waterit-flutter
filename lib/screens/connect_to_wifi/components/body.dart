@@ -19,33 +19,33 @@ class Body extends StatefulWidget {
 }
 
 class SettingsPageState extends State<Body> {
-  // late NetworkInfo info;
+  late NetworkInfo info;
   String ssid = "ssid";
 
   @override
   void initState() {
     super.initState();
-    // info = NetworkInfo();
-    // getWifiSsid();
+    info = NetworkInfo();
+    getWifiSsid();
   }
 
-  // void getWifiSsid() async {
-  //   // final ssidqq = (await info.getWifiName()) ?? "'could't load'";
-  //   // final ssidq = ssidqq.substring(1);
-  //   List<String> c = ssidq.split("");
-  //   c.removeLast();
-  //   ssid = c.join();
-  //   if (mounted) {
-  //     setState(() {});
-  //   }
-  // }
+  void getWifiSsid() async {
+    final ssidqq = (await info.getWifiName()) ?? "'could't load'";
+    final ssidq = ssidqq.substring(1);
+    List<String> c = ssidq.split("");
+    c.removeLast();
+    ssid = c.join();
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
-  // Future<void> refreshSsid() async {
-  //   getWifiSsid();
-  //   setState(() {
-  //     getWifiSsid();
-  //   });
-  // }
+  Future<void> refreshSsid() async {
+    getWifiSsid();
+    setState(() {
+      getWifiSsid();
+    });
+  }
 
   @override
   void dispose() {
@@ -57,7 +57,7 @@ class SettingsPageState extends State<Body> {
     final client = Provider.of<MQTTClientProvider>(context);
     Size size = MediaQuery.of(context).size;
     final TextEditingController passwordController = TextEditingController();
-    final TextEditingController ssidController = TextEditingController();
+    final TextEditingController ssidController = TextEditingController(text: ssid);
     final TextEditingController serverIpController = TextEditingController(text: globalIpServer);
     final TextEditingController intervalController = TextEditingController();
     final TextEditingController measurementIntervalController =

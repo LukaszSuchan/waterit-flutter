@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/components/prefs.dart';
 import 'package:flutter_app/providers/mqtt_client_provider.dart';
@@ -25,6 +26,9 @@ class _DeviceListScreenState extends State<Body> {
   late List<int> request1;
   late List<int> request2;
   late List<int> request3;
+  var packets1 = <List<int>>[];
+  var packets2 = <List<int>>[];
+  var packets3 = <List<int>>[];
   late List<BluetoothDevice> devicesList;
   late bool isScanning;
   JsonCodec json = const JsonCodec();
@@ -103,16 +107,31 @@ class _DeviceListScreenState extends State<Body> {
                             device.connect(autoConnect: false).whenComplete(
                               () async {
                                 try {
+                                  device.requestMtu(512);
                                   final response = await _getWifiCredentials();
                                   wifiCredentials = json.decode(response.body);
                                   final ssid = wifiCredentials["ssid"];
                                   final wifiPassword =
                                       wifiCredentials["wifiPassword"];
                                   final ipServer = wifiCredentials["serverIp"];
-                                  request1 = utf8.encode('{"S":"$ssid"}');
-                                  request2 =
-                                      utf8.encode('{"P":"$wifiPassword"}');
-                                  request3 = utf8.encode('{"I": "$ipServer"}');
+                                  request1 =
+                                      utf8.encode(json.encode({"S": "$ssid"}));
+                                  // for (var i = 0;
+                                  //     i < request1.length;
+                                  //     i += 256 - 3) {
+                                  //   packets1.add(request1.sublist(
+                                  //       i, min(i + 256 - 3, request1.length)));
+                                  // }
+                                  request2 = utf8.encode(
+                                      json.encode({"P": "$wifiPassword"}));
+                                  // for (var i = 0;
+                                  //     i < request2.length;
+                                  //     i += 256 - 3) {
+                                  //   packets2.add(request2.sublist(
+                                  //       i, min(i + 256 - 3, request2.length)));
+                                  // }
+                                  request3 = utf8
+                                      .encode(json.encode({"I": "$ipServer"}));
                                   canSave = true;
                                 } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -137,13 +156,13 @@ class _DeviceListScreenState extends State<Body> {
                                               .startsWith('0000dead')) {
                                             await characteristic.write(
                                                 (request1),
-                                                withoutResponse: true);
+                                                withoutResponse: false);
                                           } else if (characteristic.uuid
                                               .toString()
                                               .startsWith('0000deae')) {
                                             await characteristic.write(
                                                 (request2),
-                                                withoutResponse: true);
+                                                withoutResponse: false);
                                           } else if (characteristic.uuid
                                               .toString()
                                               .startsWith('0000deaf')) {
