@@ -116,20 +116,8 @@ class _DeviceListScreenState extends State<Body> {
                                   final ipServer = wifiCredentials["serverIp"];
                                   request1 =
                                       utf8.encode(json.encode({"S": "$ssid"}));
-                                  // for (var i = 0;
-                                  //     i < request1.length;
-                                  //     i += 256 - 3) {
-                                  //   packets1.add(request1.sublist(
-                                  //       i, min(i + 256 - 3, request1.length)));
-                                  // }
                                   request2 = utf8.encode(
                                       json.encode({"P": "$wifiPassword"}));
-                                  // for (var i = 0;
-                                  //     i < request2.length;
-                                  //     i += 256 - 3) {
-                                  //   packets2.add(request2.sublist(
-                                  //       i, min(i + 256 - 3, request2.length)));
-                                  // }
                                   request3 = utf8
                                       .encode(json.encode({"I": "$ipServer"}));
                                   canSave = true;
